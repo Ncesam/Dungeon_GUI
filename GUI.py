@@ -17,6 +17,7 @@ logging.basicConfig(
     ]
 )
 
+
 class VKBotGUI(Tk):
     def apply_style(self):
         style = ttk.Style()
@@ -71,7 +72,8 @@ class VKBotGUI(Tk):
         self.delay_entry = ttk.Entry(self, width=40, style="Custom.TEntry")
         self.delay_entry.pack(pady=5)
 
-        self.refresh_connect = ttk.Button(self, text="Refresh", style="Custom.TButton", command=self.bot.refresh_connect)
+        self.refresh_connect = ttk.Button(self, text="Refresh", style="Custom.TButton",
+                                          command=self.bot.refresh_connect)
         self.refresh_connect.pack(pady=10)
 
         self.monitor_button = ttk.Button(self, text="Monitor Item", command=self.start_monitoring, width=20,
@@ -82,7 +84,8 @@ class VKBotGUI(Tk):
         self.stop_button.pack(pady=10)
 
         # Кнопка для открытия настроек
-        self.settings_button = ttk.Button(self, text="Settings", command=self.open_settings, width=20, style="Custom.TButton")
+        self.settings_button = ttk.Button(self, text="Settings", command=self.open_settings, width=20,
+                                          style="Custom.TButton")
         self.settings_button.pack(pady=10)
 
         # Консоль для логов
@@ -105,7 +108,8 @@ class VKBotGUI(Tk):
                     item_id = item["id"]
                     title = item["title"]
                     ttk.Button(self.items_frame, text=title,
-                               command=lambda args=(item_id,title): self.id_current_item(*args)).grid(row=row, column=column)
+                               command=lambda args=(item_id, title): self.id_current_item(*args)).grid(row=row,
+                                                                                                       column=column)
         except FileNotFoundError:
             logging.error("Файл items.json не найден.")
             messagebox.showerror("Error", "items.json not found.")
@@ -151,14 +155,16 @@ class VKBotGUI(Tk):
         self.delay = int(delay)
         logging.info(f"Запуск мониторинга для Item ID: {self.item_id}, User ID: {self.user_id}, "
                      f"Max Price: {self.max_price}, Delay: {self.delay}.")
-        self.bot.send_start_monitoring(item_id=self.item_id, max_price=self.max_price, delay=self.delay, user_id=self.user_id, name=self.name)
+        self.bot.send_start_monitoring(item_id=self.item_id, max_price=self.max_price, delay=self.delay,
+                                       user_id=self.user_id, name=self.name)
 
     def stop_monitoring(self):
         if self._id_current_item:
             logging.info(f"Попытка остановить мониторинг для Item ID: {self.item_id}.")
-            self.bot.send_stop_monitoring(item_id=self.item_id, max_price=self.max_price, delay=self.delay, user_id=self.user_id)
+            self.bot.send_stop_monitoring(item_id=self.item_id)
         else:
             messagebox.showerror("Error", "Please select an item ID.")
+
     def open_settings(self):
         logging.info("Открытие окна настроек.")
         settings_window = Toplevel(self)
@@ -169,7 +175,7 @@ class VKBotGUI(Tk):
         self.ip_label.pack(pady=10)
 
         self.ip_entry = ttk.Entry(settings_window, width=30)
-        self.ip_entry.insert(0, '92.51.38.164')  # Значение по умолчанию
+        self.ip_entry.insert(0, self.bot.server_ip)  # Значение по умолчанию из текущего IP
         self.ip_entry.pack(pady=10)
 
         save_button = ttk.Button(settings_window, text="Save", command=self.save_settings)
@@ -178,9 +184,9 @@ class VKBotGUI(Tk):
     def save_settings(self):
         ip = self.ip_entry.get()
         if ip == self.bot.server_ip:
-            messagebox.showerror("Error", "Server IP don't changed")
+            messagebox.showerror("Error", "Server IP hasn't changed.")
             return
-        logging.info(f"Настройки сохранены, IP адрес сервера: {ip}")
+        logging.info(f"Настройки сохранены, новый IP адрес сервера: {ip}")
         self.bot.update_server_ip(ip)
 
     def update_console_logs(self):
@@ -198,11 +204,12 @@ class VKBotGUI(Tk):
                     last_pos = log_file.tell()  # Сохраняем позицию последнего прочитанного места
             time.sleep(1)  # Задержка для обновления
 
+
 class Client:
     def __init__(self):
         logging.info("Инициализация клиента.")
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_ip = 'localhost'
+        self.server_ip = 'localhost'  # Значение по умолчанию
         self.server_port = 8080
         self.running = False
         self.queue = queue.Queue()
@@ -220,7 +227,14 @@ class Client:
             self.listen_thread.start()
         except ConnectionRefusedError:
             logging.error(f"Не удалось подключиться к серверу {self.server_ip}:{self.server_port}.")
-            messagebox.showerror("Error",f"Failed to connect to server {self.server_ip}:{self.server_port}.")
+            messagebox.showerror("Error", f"Failed to connect to server {self.server_ip}:{self.server_port}.")
+            self.retry_connect()
+
+    def retry_connect(self):
+        """Попытка повторного подключения через 5 секунд."""
+        logging.info("Попытка повторного подключения через 5 секунд.")
+        time.sleep(5)
+        self.connect_to_server()
 
     def update_server_ip(self, ip):
         self.server_ip = ip
@@ -252,6 +266,7 @@ class Client:
 
     def refresh_connect(self):
         self.connect_to_server()
+
     def stop(self):
         logging.info("Остановка клиента.")
         self.running = False
@@ -264,8 +279,8 @@ class Client:
         data = self.queue.get()
         return data
 
+
 if __name__ == '__main__':
     logging.info("Запуск приложения.")
     app = VKBotGUI()
     app.mainloop()
-    os.remove("vk_bot.log")
