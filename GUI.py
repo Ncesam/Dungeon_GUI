@@ -1,7 +1,6 @@
 import json
 import multiprocessing
 import os
-import queue
 import socket
 import logging
 import sqlite3
@@ -179,7 +178,7 @@ class VKBotGUI(Tk):
             messagebox.showerror("Error", "Url should start with https://vip3.activeusers.ru/app.php?")
             logging.warning("Введен некорректный Url")
             return
-        url_split = self.url_entry.get().replace("https://vip3.activeusers.ru/app.php?act=item&id=13668&", "").split(
+        url_split = self.url_entry.get().replace("https://vip3.activeusers.ru/app.php?act=item&", "").split(
             "&")
         user_id = url_split[1].split("=")[1]
         auth_key = url_split[0].split("=")[1]
@@ -231,7 +230,7 @@ class Client:
     def __init__(self):
         logging.info("Инициализация клиента.")
         self.server_ip = 'localhost'
-        self.server_port = 8001
+        self.server_port = 5000
         self.queue = multiprocessing.Queue()  # Очередь для передачи данных
 
     def connect_to_server(self):
