@@ -1,8 +1,10 @@
 import json
+import multiprocessing
 import os
 import queue
 import socket
 import logging
+import sqlite3
 from tkinter import Tk, ttk, messagebox, Text, Scrollbar, Toplevel
 import time
 import threading
@@ -43,17 +45,20 @@ class VKBotGUI(Tk):
 
     def create_widgets(self):
         logging.info("Создание элементов интерфейса.")
-        self.lots_button = ttk.Button(self, text="View Lots", width=20, style='Custom.TButton')
+        self.lots_button = ttk.Button(self, text="View Lots", command=self.view_lots, width=20, style='Custom.TButton')
         self.lots_button.pack(pady=10)
 
-        self.user_id_frame = ttk.Frame(self)
-        self.user_id_frame.pack(pady=10)
+        self.url_label = ttk.Label(self, text="Enter URL", style='Custom.TLabel')
+        self.url_label.pack(expand=True)
 
-        self.user_id_label = ttk.Label(self.user_id_frame, text="Enter User ID", style='Custom.TLabel')
-        self.user_id_label.pack(expand=True)
+        self.url_entry = ttk.Entry(self, width=20, style="Custom.TEntry")
+        self.url_entry.pack(pady=10)
 
-        self.user_id_entry = ttk.Entry(self.user_id_frame, width=20, style="Custom.TEntry")
-        self.user_id_entry.pack(pady=10)
+        self.auth_key_label = ttk.Label(self, text="Enter Access Token Key", style='Custom.TLabel')
+        self.auth_key_label.pack(expand=True)
+
+        self.auth_key_entry = ttk.Entry(self, width=20, style="Custom.TEntry")
+        self.auth_key_entry.pack(pady=10)
 
         self.items_frame = ttk.Frame(self)
         self.items_frame.pack(pady=10)
@@ -104,6 +109,7 @@ class VKBotGUI(Tk):
                 items = json.load(f)
                 for index, item in enumerate(items["items"]):
                     row = index // 3
+                    self.geometry(f"{600}x{(row * 100)+800}")
                     column = index % 3
                     item_id = item["id"]
                     title = item["title"]
@@ -124,12 +130,13 @@ class VKBotGUI(Tk):
 
     def start_monitoring(self):
         logging.info("Попытка запуска мониторинга.")
-        user_id = self.user_id_entry.get()
-        if not user_id.isdigit():
-            messagebox.showerror("Error", "User ID should be a number.")
-            logging.warning("Введен некорректный User ID.")
-            return
+        user_id, auth_key = self.parse_url()
         max_price = self.price_entry.get()
+        vk_token = self.auth_key_entry.get()
+        if not vk_token:
+            messagebox.showerror("Error", "You should enter your Access Token Key.")
+            logging.warning("Не введен access токен")
+            return
         if not max_price.isdigit():
             messagebox.showerror("Error", "Max Price should be a number.")
             logging.warning("Введена некорректная максимальная цена.")
@@ -143,7 +150,7 @@ class VKBotGUI(Tk):
             messagebox.showerror("Error", "Delay should be a number.")
             logging.warning("Введена некорректная задержка.")
             return
-        if int(delay) <= 10 or int(delay) > 120:
+        if int(delay) < 3 or int(delay) > 120:
             messagebox.showerror("Error", "Delay should be between 10 and 120.")
             logging.warning("Введена задержка вне допустимого диапазона.")
             return
@@ -152,18 +159,31 @@ class VKBotGUI(Tk):
         self.name = self._name_current_item
         self.max_price = int(max_price)
         self.user_id = int(user_id)
+        self.auth_key = auth_key
         self.delay = int(delay)
-        logging.info(f"Запуск мониторинга для Item ID: {self.item_id}, User ID: {self.user_id}, "
+        self.vk_token = vk_token
+        logging.info(f"Запуск мониторинга для Item ID: {self.item_id}, User ID: {self.user_id}, Auth Key: {self.auth_key}, "
                      f"Max Price: {self.max_price}, Delay: {self.delay}.")
         self.bot.send_start_monitoring(item_id=self.item_id, max_price=self.max_price, delay=self.delay,
-                                       user_id=self.user_id, name=self.name)
+                                       user_id=self.user_id, name=self.name, auth_key=self.auth_key, vk_token=self.vk_token)
 
     def stop_monitoring(self):
-        if self._id_current_item:
-            logging.info(f"Попытка остановить мониторинг для Item ID: {self.item_id}.")
-            self.bot.send_stop_monitoring(item_id=self.item_id)
+        if self._id_current_item and self.url_entry.get():
+            user_id, _ = self.parse_url()
+            logging.info(f"Попытка остановить мониторинг для Item ID: {self._id_current_item}.")
+            self.bot.send_stop_monitoring(item_id=self._id_current_item, user_id=user_id)
         else:
-            messagebox.showerror("Error", "Please select an item ID.")
+            messagebox.showerror("Error", "Please select an item ID and user ID.")
+    def parse_url(self):
+        if not self.url_entry.get().startswith("https://vip3.activeusers.ru/app.php?"):
+            messagebox.showerror("Error", "Url should start with https://vip3.activeusers.ru/app.php?")
+            logging.warning("Введен некорректный Url")
+            return
+        url_split = self.url_entry.get().replace("https://vip3.activeusers.ru/app.php?act=item&id=13668&", "").split(
+            "&")
+        user_id = url_split[1].split("=")[1]
+        auth_key = url_split[0].split("=")[1]
+        return user_id, auth_key
 
     def open_settings(self):
         logging.info("Открытие окна настроек.")
@@ -204,31 +224,147 @@ class VKBotGUI(Tk):
                     last_pos = log_file.tell()  # Сохраняем позицию последнего прочитанного места
             time.sleep(1)  # Задержка для обновления
 
+    def view_lots(self):
+        self.bot.send_view_lots()
 
 class Client:
     def __init__(self):
         logging.info("Инициализация клиента.")
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_ip = 'localhost'  # Значение по умолчанию
-        self.server_port = 8080
-        self.running = False
-        self.queue = queue.Queue()
-
-        self.connect_to_server()
+        self.server_ip = 'localhost'
+        self.server_port = 8001
+        self.queue = multiprocessing.Queue()  # Очередь для передачи данных
 
     def connect_to_server(self):
+        """
+        Подключается к серверу и запускает процесс прослушивания.
+        """
         try:
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.connect((self.server_ip, self.server_port))
             logging.info(f"Подключение к серверу {self.server_ip}:{self.server_port} установлено.")
-            self.running = True
 
-            # Запуск потока для прослушивания сервера
-            self.listen_thread = threading.Thread(target=self.listen_to_server, daemon=True)
-            self.listen_thread.start()
+            # Проверяем и создаём новый процесс, если нужно
+            if hasattr(self, 'listen_process') and self.listen_process is not None:
+                if self.listen_process.is_alive():
+                    self.listen_process.terminate()
+                    self.listen_process.join()
+
+            # Запускаем процесс для прослушивания сервера
+            self.listen_process = multiprocessing.Process(target=self.listen_to_server, daemon=True)
+            self.listen_process.start()
         except ConnectionRefusedError:
             logging.error(f"Не удалось подключиться к серверу {self.server_ip}:{self.server_port}.")
             messagebox.showerror("Error", f"Failed to connect to server {self.server_ip}:{self.server_port}.")
-            self.retry_connect()
+
+    def refresh_connect(self):
+        self.connect_to_server()
+
+    def listen_to_server(self):
+        """
+        Процесс прослушивания сервера. Реагирует на паузы и получает сообщения.
+        """
+        try:
+            while True:
+                data = self.sock.recv(1024)
+                if data:
+                    try:
+                        if data.decode("utf-8").startswith("SQLite"):
+                            self.queue.put(data)
+                            continue
+
+                        logging.info(f"Сообщение от сервера: {data.decode('utf-8')}")
+                        self.queue.put(data)
+                    except UnicodeError:
+                        self.queue.put(data)  # В случае ошибки кодирования
+                else:
+                    logging.warning("Соединение с сервером закрыто.")
+                    self.queue.put(b'')  # Сигнализируем завершение передачи
+                    self.stop()  # Останавливаем процесс
+                    break
+        except Exception as e:
+            logging.error(f"Ошибка при получении данных от сервера: {e}")
+            self.stop()
+
+    def recv_db_file(self):
+        """
+        Получение файла от сервера и сохранение на диск.
+        """
+        with open('lot.db', 'wb') as file:
+            logging.debug("Файл открыт")
+            while True:
+                chunk = self.queue.get()
+                file.write(chunk)
+                file.flush()
+                if self.queue.empty():  # Если получен пустой чанк, значит данные закончились
+                    logging.debug("Данные завершены, файл закрыт.")
+                    break
+                # Сброс буфера для записи на диск
+            logging.debug("Файл сохранен успешно.")
+
+    def send_start_monitoring(self, item_id, user_id, auth_key, max_price, delay, name, vk_token):
+        """
+        Отправляет команду на сервер для начала мониторинга.
+        """
+        template = f"start monitoring item_id={item_id} user_id={user_id} auth_key={auth_key} max_price={max_price} delay={delay} name={name} token={vk_token}"
+        self.sock.send(template.encode())
+        logging.info(f"Отправлено сообщение на сервер: {template}")
+
+    def send_stop_monitoring(self, item_id, user_id):
+        """
+        Отправляет команду на сервер для остановки мониторинга.
+        """
+        template = f"stop monitoring item_id={item_id} user_id={user_id}"
+        self.sock.send(template.encode())
+        logging.info(f"Отправлено сообщение на сервер: {template}")
+
+    def send_view_lots(self):
+        """
+        Отправляет запрос на просмотр лотов и обрабатывает полученный файл.
+        """
+        success = False
+        while not success:
+            template = "view lots"
+            self.sock.send(template.encode())
+            self.recv_db_file()  # Получаем файл
+            # Читаем данные из базы
+            conn = sqlite3.connect('lot.db')
+            logging.info("Файл открывается")
+            conn.isolation_level = None
+            cursor = conn.cursor()
+            try:
+                cursor.execute('VACUUM;')
+                list_lots = cursor.execute('SELECT * FROM lots ORDER BY time DESC;').fetchmany(10)
+            except sqlite3.DatabaseError as e:
+                continue
+            conn.close()
+            logging.info("Файл закрыт")
+            # Отображаем данные
+            message = "\n".join([f"{lot[1]} - {lot[2]} price: {lot[3]} in {lot[4]}" for lot in list_lots])
+            messagebox.showinfo("Lots", message=message)
+            success = True
+
+
+    def update_server_ip(self, ip):
+        self.server_ip = ip
+        self.connect_to_server()
+
+
+    def stop(self):
+        """
+        Останавливает клиента и завершает процессы.
+        """
+        logging.info("Остановка клиента.")
+        try:
+            self.sock.close()
+        except Exception as e:
+            logging.error(f"Ошибка при закрытии сокета: {e}")
+
+        if hasattr(self, 'listen_process') and self.listen_process is not None:
+            if self.listen_process.is_alive():
+                logging.info("Завершение процесса прослушивания.")
+                self.listen_process.terminate()
+                self.listen_process.join()  # Дождаться завершения процесса
+            self.listen_process = None
 
     def retry_connect(self):
         """Попытка повторного подключения через 5 секунд."""
@@ -236,51 +372,10 @@ class Client:
         time.sleep(5)
         self.connect_to_server()
 
-    def update_server_ip(self, ip):
-        self.server_ip = ip
-        self.connect_to_server()
-
-    def listen_to_server(self):
-        try:
-            while self.running:
-                data = self.sock.recv(4096)
-                if data:
-                    logging.info(f"Сообщение от сервера: {data.decode('utf-8')}")
-                else:
-                    logging.warning("Соединение с сервером закрыто.")
-                    self.stop()
-                    break
-        except Exception as e:
-            logging.error(f"Ошибка при получении данных от сервера: {e}")
-            self.stop()
-
-    def send_start_monitoring(self, item_id, user_id, max_price, delay, name):
-        template = f"start monitoring item_id={item_id} user_id={user_id} max_price={max_price} delay={delay} name={name}"
-        self.sock.send(template.encode())
-        logging.info(f"Отправлено сообщение на сервер: {template}")
-
-    def send_stop_monitoring(self, item_id):
-        template = f"stop monitoring item_id={item_id}"
-        self.sock.send(template.encode())
-        logging.info(f"Отправлено сообщение на сервер: {template}")
-
-    def refresh_connect(self):
-        self.connect_to_server()
-
-    def stop(self):
-        logging.info("Остановка клиента.")
-        self.running = False
-        try:
-            self.sock.close()
-        except Exception as e:
-            logging.error(f"Ошибка при закрытии сокета: {e}")
-
-    def get_view(self):
-        data = self.queue.get()
-        return data
-
 
 if __name__ == '__main__':
     logging.info("Запуск приложения.")
     app = VKBotGUI()
     app.mainloop()
+    os.remove("vk_bot.log")
+    os.remove("lot.db")
