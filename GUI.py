@@ -108,7 +108,7 @@ class VKBotGUI(Tk):
                 items = json.load(f)
                 for index, item in enumerate(items["items"]):
                     row = index // 3
-                    self.geometry(f"{600}x{(row * 100)+800}")
+                    self.geometry(f"{600}x{(row * 100) + 800}")
                     column = index % 3
                     item_id = item["id"]
                     title = item["title"]
@@ -161,10 +161,12 @@ class VKBotGUI(Tk):
         self.auth_key = auth_key
         self.delay = int(delay)
         self.vk_token = vk_token
-        logging.info(f"Запуск мониторинга для Item ID: {self.item_id}, User ID: {self.user_id}, Auth Key: {self.auth_key}, "
-                     f"Max Price: {self.max_price}, Delay: {self.delay}.")
+        logging.info(
+            f"Запуск мониторинга для Item ID: {self.item_id}, User ID: {self.user_id}, Auth Key: {self.auth_key}, "
+            f"Max Price: {self.max_price}, Delay: {self.delay}.")
         self.bot.send_start_monitoring(item_id=self.item_id, max_price=self.max_price, delay=self.delay,
-                                       user_id=self.user_id, name=self.name, auth_key=self.auth_key, vk_token=self.vk_token)
+                                       user_id=self.user_id, name=self.name, auth_key=self.auth_key,
+                                       vk_token=self.vk_token)
 
     def stop_monitoring(self):
         if self._id_current_item and self.url_entry.get():
@@ -173,6 +175,7 @@ class VKBotGUI(Tk):
             self.bot.send_stop_monitoring(item_id=self._id_current_item, user_id=user_id)
         else:
             messagebox.showerror("Error", "Please select an item ID and user ID.")
+
     def parse_url(self):
         if not self.url_entry.get().startswith("https://vip3.activeusers.ru/app.php?"):
             messagebox.showerror("Error", "Url should start with https://vip3.activeusers.ru/app.php?")
@@ -180,8 +183,8 @@ class VKBotGUI(Tk):
             return
         url_split = self.url_entry.get().replace("https://vip3.activeusers.ru/app.php?act=item&", "").split(
             "&")
-        user_id = url_split[1].split("=")[1]
-        auth_key = url_split[0].split("=")[1]
+        user_id = url_split[2].split("=")[1]
+        auth_key = url_split[1].split("=")[1]
         return user_id, auth_key
 
     def open_settings(self):
@@ -225,6 +228,7 @@ class VKBotGUI(Tk):
 
     def view_lots(self):
         self.bot.send_view_lots()
+
 
 class Client:
     def __init__(self):
@@ -342,11 +346,9 @@ class Client:
             messagebox.showinfo("Lots", message=message)
             success = True
 
-
     def update_server_ip(self, ip):
         self.server_ip = ip
         self.connect_to_server()
-
 
     def stop(self):
         """
