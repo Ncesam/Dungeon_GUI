@@ -67,6 +67,8 @@ def loop(vk, id_group):
                 return
             logging.info(f"Left {bait} bait.")
             break
+        else:
+            continue
 
 
 def delete_message(vk ,message_id, peer_id):
