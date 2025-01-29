@@ -1,14 +1,12 @@
 import json
-import multiprocessing
-import os
-import socket
 import logging
-import sqlite3
-from tkinter import Tk, ttk, messagebox, Text, Scrollbar, Toplevel
-import time
+import os
 import threading
+import time
+from tkinter import Tk, ttk, messagebox, Text, Scrollbar, Toplevel
 
 from Client import Client
+from app.VK_API import VKFishing
 
 # Настройка логирования
 logging.basicConfig(
@@ -89,6 +87,12 @@ class VKBotGUI(Tk):
         self.stop_button = ttk.Button(self, text="Stop", command=self.stop_monitoring, width=20, style="Custom.TButton")
         self.stop_button.pack(pady=10)
 
+        self.fishing_button = ttk.Button(self, text="Fishing", command=self.start_fishing, width=20, style="Custom.TButton")
+        self.fishing_button.pack(pady=10)
+
+        self.stop_fishing_button = ttk.Button(self, text="Stop Fishing", command=self.stop_fishing, width=20, style="Custom.TButton")
+        self.stop_fishing_button.pack(pady=10)
+
         # Кнопка для открытия настроек
         self.settings_button = ttk.Button(self, text="Settings", command=self.open_settings, width=20,
                                           style="Custom.TButton")
@@ -128,6 +132,22 @@ class VKBotGUI(Tk):
         self._id_current_item = item_id
         self._name_current_item = "_".join(name.split())
         logging.info(f"Выбран элемент с ID: {item_id} и именем {name}.")
+
+    def start_fishing(self):
+        logging.info("Попытка запуска бота для рыбалки")
+        vk_token = self.auth_key_entry.get()
+        if not vk_token:
+            messagebox.showerror("Error", "You should enter your Access Token Key.")
+            logging.warning("Не введен access токен")
+            return
+        self.vk_bot = VKFishing(vk_token)
+        self.vk_bot.start()
+        logging.info("Бот стартовал")
+
+    def stop_fishing(self):
+        logging.info("Попытка остановить бота для рыбалки")
+        self.vk_bot.stop()
+        logging.info("Бот остановлен")
 
     def start_monitoring(self):
         logging.info("Попытка запуска мониторинга.")
