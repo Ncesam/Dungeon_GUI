@@ -48,27 +48,32 @@ def loop(vk, id_group):
     time.sleep(5)
     vk.messages.send(peer_id=id_group, random_id=0, message="Закинуть удочку")
     time.sleep(5)
-    while True:
-        message = vk.messages.getHistory(count=1, offset=0,
+    finded = False
+    while not finded:
+        messages = vk.messages.getHistory(count=3, offset=0,
                                               peer_id=id_group)
         time.sleep(10)
-        text = message['items'][0]['text']
-        if text == "🚫Наживка в лодке закончилась!":
-            messagebox.showerror("Error", "Наживок нету.")
-            delete_message(vk, message_id=message['id'], peer_id=id_group)
-        elif text == "Леска вытягивается очень тяжело...":
-            messagebox.showinfo("Monster", "Пользователь наткнулся на монстра.")
-        elif "Нaживки осталоcь" in text:
-            bait = text.split(" ")[-1]
-            print(bait)
-            if bait == "0":
-                messagebox.showinfo("Baits", "Наживки кончились.")
-                delete_message(vk , message_id=message['id'], peer_id=id_group)
-                return
-            logging.info(f"Left {bait} bait.")
-            break
-        else:
-            continue
+        for message in messages['items']:
+            text = message['text']
+            if text == "🚫Наживка в лодке закончилась!":
+                messagebox.showerror("Error", "Наживок нету.")
+                delete_message(vk, message_id=message['id'], peer_id=id_group)
+                continue
+            elif text == "Леска вытягивается очень тяжело...":
+                messagebox.showinfo("Monster", "Пользователь наткнулся на монстра.")
+                continue
+            elif "Нaживки осталоcь" in text:
+                bait = text.split(" ")[-1]
+                print(bait)
+                if bait == "0":
+                    messagebox.showinfo("Baits", "Наживки кончились.")
+                    delete_message(vk , message_id=message['id'], peer_id=id_group)
+                    return
+                logging.info(f"Left {bait} bait.")
+                finded = True
+                break
+            else:
+                continue
 
 
 def delete_message(vk ,message_id, peer_id):
