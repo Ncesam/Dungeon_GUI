@@ -1,7 +1,8 @@
 .venv/*
-.idea/*
 GUI.spec
 vk_bot.log
 tests/*
 __pycache__
 pytest.ini
+.idea
+.vscode

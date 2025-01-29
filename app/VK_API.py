@@ -15,7 +15,7 @@ class VKFishing:
         self.id_group = self.get_group()
 
     def start(self):
-        self.process = multiprocessing.Process(target=self.run)
+        self.process = multiprocessing.Process(target=self.run, daemon=True)
         self.process.start()
 
     def run(self):
@@ -28,24 +28,28 @@ class VKFishing:
         self.process.join()
 
     def loop(self):
+        time.sleep(5)
         self.vk.messages.send(peer_id=self.id_group, random_id=0, message="Закинуть удочку")
         time.sleep(5)
-        message = self.vk.messages.getHistory(count=1, offset=0,
-                                              peer_id=self.id_group)
-        time.sleep(2)
-        text = message['items'][0]['text']
-        if text == "🚫Наживка в лодке закончилась!":
-            messagebox.showerror("Error", "Наживок нету.")
-            self.delete_message(message_id=message['id'], peer_id=self.id_group)
-        elif text == "Леска вытягивается очень тяжело...":
-            messagebox.showinfo("Monster", "Пользователь наткнулся на монстра.")
-        elif "Нaживки осталоcь" in text:
-            bait = text.split(" ")[2]
-            if bait == "0":
-                messagebox.showinfo("Baits", "Наживки кончились.")
+        while True:
+            message = self.vk.messages.getHistory(count=1, offset=0,
+                                                  peer_id=self.id_group)
+            time.sleep(10)
+            text = message['items'][0]['text']
+            if text == "🚫Наживка в лодке закончилась!":
+                messagebox.showerror("Error", "Наживок нету.")
                 self.delete_message(message_id=message['id'], peer_id=self.id_group)
-                return
-            logging.info(f"Left {bait} bait.")
+            elif text == "Леска вытягивается очень тяжело...":
+                messagebox.showinfo("Monster", "Пользователь наткнулся на монстра.")
+            elif "Нaживки осталоcь" in text:
+                bait = text.split(" ")[-1]
+                print(bait)
+                if bait == "0":
+                    messagebox.showinfo("Baits", "Наживки кончились.")
+                    self.delete_message(message_id=message['id'], peer_id=self.id_group)
+                    return
+                logging.info(f"Left {bait} bait.")
+                break
 
     def delete_message(self, message_id, peer_id):
         self.vk.messages.delete(message_id=message_id, peer_id=peer_id)
