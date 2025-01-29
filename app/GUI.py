@@ -1,12 +1,13 @@
 import json
 import logging
+import multiprocessing
 import os
 import threading
 import time
 from tkinter import Tk, ttk, messagebox, Text, Scrollbar, Toplevel
 
 from Client import Client
-from app.VK_API import VKFishing
+from VK_API import VKFishing
 
 # Настройка логирования
 logging.basicConfig(
@@ -252,10 +253,16 @@ class VKBotGUI(Tk):
         self.bot.send_view_lots()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
+    multiprocessing.set_start_method("spawn")  # Устанавливаем spawn
     logging.info("Запуск приложения.")
+
     app = VKBotGUI()
     app.mainloop()
+
     app.bot.stop()
-    os.remove("vk_bot.log")
-    os.remove("lot.db")
+    try:
+        os.remove("vk_bot.log")
+        os.remove("lot.db")
+    except FileNotFoundError:
+        logging.warning("Файлы vk_bot.log или lot.db не найдены.")

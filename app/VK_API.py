@@ -10,50 +10,18 @@ class VKFishing:
     def __init__(self, token: str = None):
         if token is None:
             raise "Please enter a token"
+        self.token = token
         self.session = vk_api.VkApi(token=token)
         self.vk = self.session.get_api()
         self.id_group = self.get_group()
 
     def start(self):
-        self.process = multiprocessing.Process(target=self.run, daemon=True)
+        self.process = multiprocessing.Process(target=run, args=(self.token, self.id_group))
         self.process.start()
-
-    def run(self):
-        while True:
-            time.sleep(2)
-            self.loop()
 
     def stop(self):
         self.process.terminate()
         self.process.join()
-
-    def loop(self):
-        time.sleep(5)
-        self.vk.messages.send(peer_id=self.id_group, random_id=0, message="Закинуть удочку")
-        time.sleep(5)
-        while True:
-            message = self.vk.messages.getHistory(count=1, offset=0,
-                                                  peer_id=self.id_group)
-            time.sleep(10)
-            text = message['items'][0]['text']
-            if text == "🚫Наживка в лодке закончилась!":
-                messagebox.showerror("Error", "Наживок нету.")
-                self.delete_message(message_id=message['id'], peer_id=self.id_group)
-            elif text == "Леска вытягивается очень тяжело...":
-                messagebox.showinfo("Monster", "Пользователь наткнулся на монстра.")
-            elif "Нaживки осталоcь" in text:
-                bait = text.split(" ")[-1]
-                print(bait)
-                if bait == "0":
-                    messagebox.showinfo("Baits", "Наживки кончились.")
-                    self.delete_message(message_id=message['id'], peer_id=self.id_group)
-                    return
-                logging.info(f"Left {bait} bait.")
-                break
-
-    def delete_message(self, message_id, peer_id):
-        self.vk.messages.delete(message_id=message_id, peer_id=peer_id)
-        logging.debug('Message deleted')
 
     def get_group(self):
         list_conversation = self.vk.messages.getConversations(count=15)
@@ -64,3 +32,43 @@ class VKFishing:
                 if group[0]['name'] == "Подземелья колодца":
                     logging.info("Нашел группу")
                     return conversation['conversation']['peer']['id']
+
+
+def run(token, id_group):
+    if token is None:
+        raise "Please enter a token"
+    session = vk_api.VkApi(token=token)
+    vk = session.get_api()
+    while True:
+        time.sleep(2)
+        loop(vk, id_group)
+
+
+def loop(vk, id_group):
+    time.sleep(5)
+    vk.messages.send(peer_id=id_group, random_id=0, message="Закинуть удочку")
+    time.sleep(5)
+    while True:
+        message = vk.messages.getHistory(count=1, offset=0,
+                                              peer_id=id_group)
+        time.sleep(10)
+        text = message['items'][0]['text']
+        if text == "🚫Наживка в лодке закончилась!":
+            messagebox.showerror("Error", "Наживок нету.")
+            delete_message(vk, message_id=message['id'], peer_id=id_group)
+        elif text == "Леска вытягивается очень тяжело...":
+            messagebox.showinfo("Monster", "Пользователь наткнулся на монстра.")
+        elif "Нaживки осталоcь" in text:
+            bait = text.split(" ")[-1]
+            print(bait)
+            if bait == "0":
+                messagebox.showinfo("Baits", "Наживки кончились.")
+                delete_message(vk , message_id=message['id'], peer_id=id_group)
+                return
+            logging.info(f"Left {bait} bait.")
+            break
+
+
+def delete_message(vk ,message_id, peer_id):
+    vk.messages.delete(message_id=message_id, peer_id=peer_id)
+    logging.debug('Message deleted')
