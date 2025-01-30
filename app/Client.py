@@ -18,7 +18,8 @@ class Client:
         Подключается к серверу и запускает процесс прослушивания.
         """
         try:
-            self.sock = socket.create_connection((self.server_ip, self.server_port), timeout=2000)
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.connect((self.server_ip, self.server_port))
             logging.info(f"Подключение к серверу {self.server_ip}:{self.server_port} установлено.")
 
             if hasattr(self, 'listen_process') and self.listen_process is not None:
