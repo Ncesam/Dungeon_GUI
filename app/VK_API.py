@@ -16,7 +16,7 @@ class VKFishing:
         self.id_group = self.get_group()
 
     def start(self):
-        self.process = multiprocessing.Process(target=run, args=(self.token, self.id_group))
+        self.process = multiprocessing.Process(target=run, args=(self.token, self.id_group), daemon=True)
         self.process.start()
 
     def stop(self):
