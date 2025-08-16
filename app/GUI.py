@@ -9,17 +9,6 @@ from tkinter import Tk, ttk, messagebox, Text, Scrollbar, Toplevel
 from Client import Client
 from VK_API import VKFishing
 
-# Настройка логирования
-logging.basicConfig(
-    level=logging.DEBUG,  # Уровень логирования (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    format="%(asctime)s [%(levelname)s] %(message)s",  # Формат сообщения
-    handlers=[
-        logging.FileHandler("vk_bot.log"),  # Логирование в файл
-        logging.StreamHandler()  # Логирование в консоль
-    ]
-)
-
-
 class VKBotGUI(Tk):
     def apply_style(self):
         style = ttk.Style()
@@ -39,7 +28,6 @@ class VKBotGUI(Tk):
         self.apply_style()
         self.create_widgets()
 
-        # Поток для обновления логов в консоли
         self.log_thread = threading.Thread(target=self.update_console_logs, daemon=True)
         self.log_thread.start()
 

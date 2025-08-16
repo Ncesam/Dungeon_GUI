@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    width: 100vw;
+    height: 100vh;
+    background: #223834;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    font-weight: 800;
+}
+.slide-up-label {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    background-color: #377D6A;
+    color: white;
+    padding: 10px 15px;
+    border-radius: 6px;
+    text-align: left;
+    font-weight: bold;
+}
+
+.group:hover .slide-up-label {
+    transform: translateY(-100%);
+    opacity: 0;
+}
+
+.slide-up-input {
+    padding: 10px 15px;
+    background: #e1e1e1;
+    border-radius: 6px;
+    border: none;
+    outline: none;
+    color: #3b7d6e;
+    transition: all 0.3s ease;
+}
