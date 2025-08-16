@@ -8,4 +8,6 @@ pytest.ini
 .vscode
 node_modules
 package-lock.json
+build/
+release/
 !config/build/*

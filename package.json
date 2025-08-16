@@ -87,10 +87,11 @@
     "appId": "com.ncesam.Dungeon",
     "productName": "DungeonApp",
     "directories": {
-      "output": "build"
+      "output": "release"
     },
     "files": [
-      "**/*"
+      "build/**/*",
+      "package.json"
     ],
     "win": {
       "target": "nsis"
