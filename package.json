@@ -1,0 +1,106 @@
+{
+  "name": "gui",
+  "version": "1.0.0",
+  "private": true,
+  "main": "build/main.js",
+  "scripts": {
+    "dev": "concurrently  \"webpack serve --env mode=development -c webpack.renderer.config.ts\" \"wait-on http://localhost:3000 && electron .\" ",
+    "build:dev": "webpack --env mode=development -c webpack.renderer.config.ts",
+    "build:prod": "webpack --env mode=production -c webpack.renderer.config.ts",
+
+    "build:electron": "webpack -c webpack.electron.config.ts",
+    "build": "npm run build:electron && npm run build:prod && electron-builder --win",
+    "typecheck": "tsc"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.8.3",
+    "@electron-forge/maker-deb": "^7.8.3",
+    "@electron-forge/maker-rpm": "^7.8.3",
+    "@electron-forge/maker-squirrel": "^7.8.3",
+    "@electron-forge/maker-zip": "^7.8.3",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.8.3",
+    "@electron-forge/plugin-fuses": "^7.8.3",
+    "@electron-forge/plugin-webpack": "^7.8.3",
+    "@electron/fuses": "^1.8.0",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.6.1",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/dotenv-webpack": "^7.0.8",
+    "@types/react": "^19.1.9",
+    "@types/react-dom": "^19.1.7",
+    "@types/typescript": "^0.4.29",
+    "@types/webpack": "^5.28.5",
+    "@types/webpack-bundle-analyzer": "^4.7.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "autoprefix": "^1.0.1",
+    "autoprefixer": "^10.4.21",
+    "clsx": "^2.1.1",
+    "concurrently": "^9.2.0",
+    "copy-webpack-plugin": "^13.0.0",
+    "create-electron-app": "^7.8.3",
+    "css-loader": "^7.1.2",
+    "dotenv": "^17.2.1",
+    "dotenv-webpack": "^8.1.1",
+    "electron": "^37.2.5",
+    "esbuild": "^0.25.8",
+    "fork-ts-checker-webpack-plugin": "^9.1.0",
+    "html-webpack-plugin": "^5.6.3",
+    "mini-css-extract-plugin": "^2.9.2",
+    "postcss": "^8.5.6",
+    "postcss-loader": "^8.1.1",
+    "react-refresh-typescript": "^2.0.10",
+    "style-loader": "^4.0.0",
+    "tailwindcss": "3.0",
+    "ts-loader": "^9.5.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2",
+    "wait-on": "^8.0.4",
+    "webpack": "^5.101.0",
+    "webpack-bundle-analyzer": "^4.10.2",
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2",
+    "@electron-forge/shared-types": "^7.8.3"
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1.0.1",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "build": {
+    "appId": "com.ncesam.Dungeon",
+    "productName": "DungeonApp",
+    "directories": {
+      "output": "build"
+    },
+    "files": [
+      "**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "ncesam",
+        "repo": "Dungeon_GUI"
+      }
+    ]
+  }
+}
