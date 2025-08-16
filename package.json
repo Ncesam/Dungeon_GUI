@@ -7,7 +7,6 @@
     "dev": "concurrently  \"webpack serve --env mode=development -c webpack.renderer.config.ts\" \"wait-on http://localhost:3000 && electron .\" ",
     "build:dev": "webpack --env mode=development -c webpack.renderer.config.ts",
     "build:prod": "webpack --env mode=production -c webpack.renderer.config.ts",
-
     "build:electron": "webpack -c webpack.electron.config.ts",
     "build": "npm run build:electron && npm run build:prod && electron-builder --win",
     "typecheck": "tsc"
@@ -76,11 +75,11 @@
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1",
     "webpack-dev-server": "^5.2.2",
-    "@electron-forge/shared-types": "^7.8.3"
+    "@electron-forge/shared-types": "^7.8.3",
+    "electron-builder": "^26.0.12"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",
-    "electron-builder": "^26.0.12",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
