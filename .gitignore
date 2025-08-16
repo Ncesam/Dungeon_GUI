@@ -7,5 +7,4 @@ pytest.ini
 .idea
 .vscode
 node_modules
-package-lock.json
 build/
