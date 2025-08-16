@@ -19,7 +19,7 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install-clean
+        run: npm install && npm install-clean
 
       - name: Build and release
         env:
