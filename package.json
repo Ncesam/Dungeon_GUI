@@ -8,7 +8,7 @@
     "build:dev": "webpack --env mode=development -c webpack.renderer.config.ts",
     "build:prod": "webpack --env mode=production -c webpack.renderer.config.ts",
     "build:electron": "webpack -c webpack.electron.config.ts",
-    "build": "npm run build:electron && npm run build:prod && electron-builder --win",
+    "build": "npm run build:prod && npm run build:electron && electron-builder --win",
     "typecheck": "tsc"
   },
   "eslintConfig": {
