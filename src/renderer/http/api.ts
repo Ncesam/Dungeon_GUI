@@ -1,6 +1,6 @@
-import axios, { AxiosInstance } from "axios";
+import axios, {AxiosInstance} from "axios";
 
-const API_URL = "https://example.com/api"; // твой baseURL
+const API_URL = "http://92.51.38.164:8000";
 
 const $api: AxiosInstance = axios.create({
   baseURL: API_URL,
