@@ -13,18 +13,51 @@ const MainPage: FC = () => {
     const [maxPrice, setMaxPrice] = useState<number>(10000);
     const [delay, setDelay] = useState<number>(50);
     const [items, setItems] = useState<DungeonItem[]>([]);
-    const [selectedItem, setSelectedItem] = useState<DungeonItem>();
+    const [selectedItem, setSelectedItem] = useState<DungeonItem | null>(null);
     const startBot = async () => {
-        const parsedUrl = parseUrl(urlItem);
-        await startMonitoring({
-            delay: delay,
-            name: selectedItem?.name,
-            item_id: selectedItem?.id,
-            auth_key: parsedUrl?.authKey,
-            user_id: parsedUrl?.userId,
-            max_price: maxPrice
-        })
-    }
+        if (!selectedItem) {
+            alert("Выберите предмет");
+            return;
+        }
+        if (urlItem.trim() === "") {
+            alert("Введите URL");
+            return;
+        }
+        if (vkToken.trim() === "") {
+            alert("Введите VK Token");
+            return;
+        }
+
+        let parsedUrl;
+        try {
+            parsedUrl = parseUrl(urlItem);
+            if (!parsedUrl?.authKey || !parsedUrl?.userId) {
+                throw new Error("Некорректный URL");
+            }
+        } catch (err) {
+            alert("Введите правильный URL");
+            return;
+        }
+
+        try {
+            const payload = {
+                delay,
+                name: selectedItem.name,
+                item_id: selectedItem.id,
+                auth_key: parsedUrl.authKey,
+                user_id: parsedUrl.userId,
+                max_price: maxPrice,
+                vk_token: vkToken
+            };
+
+            console.log(payload);
+            await startMonitoring(payload);
+        } catch (err) {
+            console.error("Ошибка запуска бота:", err);
+            alert("Не удалось запустить бота");
+        }
+    };
+
     const stopBot = async () => {
         const parsedUrl = parseUrl(urlItem);
         await stopMonitoring({
@@ -33,7 +66,8 @@ const MainPage: FC = () => {
             item_id: selectedItem?.id,
             auth_key: parsedUrl?.authKey,
             user_id: parsedUrl?.userId,
-            max_price: maxPrice
+            max_price: maxPrice,
+            vk_token: vkToken
         })
     }
     useEffect(() => {
@@ -47,7 +81,6 @@ const MainPage: FC = () => {
         };
         fetchItems();
     }, []);
-    console.log(items.length)
     return (
         <div className={"w-full h-full flex flex-col items-center gap-10 justify-center"}>
             <div className={"w-full flex justify-center items-center"}>
@@ -59,7 +92,10 @@ const MainPage: FC = () => {
                             </span>
                             <div className="w-full h-1/4 grid grid-cols-3 gap-1">
                                 {items.map((item) => (
-                                    <ItemCard key={item.id} id={item.id} name={item.name}/>
+                                    <div className={"w-full h-full"}
+                                         onClick={(event) => setSelectedItem({id: item.id, name: item.name})}>
+                                        <ItemCard key={item.id} id={item.id} name={item.name}/>
+                                    </div>
                                 ))}
                             </div>
                         </>
@@ -88,7 +124,7 @@ const MainPage: FC = () => {
     )
 }
 
-function parseUrl(url: string): { userId: string; authKey: string } | null {
+function parseUrl(url: string): { userId: number; authKey: string } | null {
     const requiredStart = "https://vip3.activeusers.ru/app.php?";
 
     if (!url.startsWith(requiredStart)) {
@@ -97,13 +133,13 @@ function parseUrl(url: string): { userId: string; authKey: string } | null {
     }
 
     const cleanedUrl = url.replace(
-        "https://vip3.activeusers.ru/app.php?act=item&",
+        requiredStart + "act=item&",
         ""
     );
 
     const parts = cleanedUrl.split("&");
 
-    const userId = parts[2]?.split("=")[1];
+    const userId = Number(parts[2]?.split("=")[1]);
     const authKey = parts[1]?.split("=")[1];
 
     if (!userId || !authKey) {

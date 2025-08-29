@@ -4,12 +4,13 @@ import * as electron from "electron";
 
 
 export async function createFileItems(event: electron.IpcMainInvokeEvent) {
-    const dirPath = path.join(__dirname, 'files');
-    const filePath = path.join(dirPath, 'items.json');
+    const appDataPath = electron.app.getPath('userData');
+
+    fs.mkdirSync(appDataPath, {recursive: true});
+
+    const filePath = path.join(appDataPath, 'items.json')
 
     try {
-        await fs.promises.mkdir(dirPath, {recursive: true});
-
         await fs.promises.writeFile(filePath, JSON.stringify({items: []}));
 
         return {success: true, path: filePath};
@@ -20,7 +21,11 @@ export async function createFileItems(event: electron.IpcMainInvokeEvent) {
 }
 
 export async function updateFileItems(event: electron.IpcMainInvokeEvent, nameItem: string, idItem: number) {
-    const filePath = path.join(__dirname, 'files/items.json');
+    const appDataPath = electron.app.getPath('userData');
+
+    fs.mkdirSync(appDataPath, {recursive: true});
+
+    const filePath = path.join(appDataPath, 'items.json');
     try {
         fs.readFileSync(filePath, "utf8");
     } catch (err) {
@@ -47,7 +52,11 @@ export async function updateFileItems(event: electron.IpcMainInvokeEvent, nameIt
 }
 
 export async function readFileItems(event: electron.IpcMainInvokeEvent) {
-    const filePath = path.join(__dirname, 'files/items.json');
+    const appDataPath = electron.app.getPath('userData');
+
+    fs.mkdirSync(appDataPath, {recursive: true});
+
+    const filePath = path.join(appDataPath, 'items.json')
     try {
         const data = fs.readFileSync(filePath, "utf8");
         return JSON.parse(data).items as DungeonItem[];

@@ -35,5 +35,6 @@ declare global {
         auth_key: str
         delay: int
         name: str
+        vk_token: str
     }
 }
