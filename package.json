@@ -5,7 +5,7 @@
   "main": "build/main.js",
   "scripts": {
     "dev": "concurrently  \"webpack serve --env mode=development -c webpack.renderer.config.ts\" \"wait-on http://localhost:3000 && electron .\" ",
-    "build:dev": "webpack --env mode=development -c webpack.renderer.config.ts",
+    "build:dev": "webpack serve --env mode=development -c webpack.renderer.config.ts",
     "build:prod": "webpack --env mode=production -c webpack.renderer.config.ts",
     "build:electron": "webpack -c webpack.electron.config.ts",
     "build": "npm run build:prod && npm run build:electron && electron-builder",
@@ -38,6 +38,7 @@
     "@electron-forge/plugin-auto-unpack-natives": "^7.8.3",
     "@electron-forge/plugin-fuses": "^7.8.3",
     "@electron-forge/plugin-webpack": "^7.8.3",
+    "@electron-forge/shared-types": "^7.8.3",
     "@electron/fuses": "^1.8.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.6.1",
     "@tailwindcss/postcss": "^4.1.11",
@@ -58,12 +59,14 @@
     "dotenv": "^17.2.1",
     "dotenv-webpack": "^8.1.1",
     "electron": "^37.2.5",
+    "electron-builder": "^26.0.12",
     "esbuild": "^0.25.8",
     "fork-ts-checker-webpack-plugin": "^9.1.0",
     "html-webpack-plugin": "^5.6.3",
     "mini-css-extract-plugin": "^2.9.2",
     "postcss": "^8.5.6",
     "postcss-loader": "^8.1.1",
+    "react-hot-toast": "^2.6.0",
     "react-refresh-typescript": "^2.0.10",
     "style-loader": "^4.0.0",
     "tailwindcss": "3.0",
@@ -74,9 +77,7 @@
     "webpack": "^5.101.0",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1",
-    "webpack-dev-server": "^5.2.2",
-    "@electron-forge/shared-types": "^7.8.3",
-    "electron-builder": "^26.0.12"
+    "webpack-dev-server": "^5.2.2"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",

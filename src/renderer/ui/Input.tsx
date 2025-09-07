@@ -1,6 +1,5 @@
-import {FC, useRef} from "react";
+import {FC} from "react";
 import {InputForm} from "@/ui/Input.props";
-import clsx from "clsx";
 
 
 const Input: FC<InputForm> = ({
@@ -15,7 +14,8 @@ const Input: FC<InputForm> = ({
                 <input type={type} className={"slide-up-input absolute top-0 left-0 w-full z-0"} placeholder={placeholder}
                        value={value}
                        onChange={(event) => setValue(event.target.value)}/>
-                <label className={"slide-up-label absolute top-0 left-0 z-10 w-full cursor-pointer"}>{label}</label>
+                <label
+                    className={"slide-up-label absolute top-0 left-0 z-10 w-full flex items-center justify-center cursor-pointer"}>{label}</label>
             </span>
     )
 }

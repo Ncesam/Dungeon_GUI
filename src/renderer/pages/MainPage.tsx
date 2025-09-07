@@ -1,10 +1,12 @@
 import React, {FC, useEffect, useState} from "react";
 import Input from "@/ui/Input";
-import ItemCard from "@/ui/ItemCard";
 import Button from "@/ui/Button";
 import {ButtonType} from "@/ui/Button.props";
 import PopupAddItem from "@/ui/PopupAddItem";
-import {startMonitoring, stopMonitoring} from "@/http/lots";
+import ItemsList from "@/components/ItemsList";
+import {fetchItems} from "@/services/itemsService";
+import {notify} from "@/utils/notify";
+import {startBot, stopBot} from "@/services/botService";
 
 
 const MainPage: FC = () => {
@@ -12,100 +14,67 @@ const MainPage: FC = () => {
     const [urlItem, setUrlItem] = useState<string>("");
     const [maxPrice, setMaxPrice] = useState<number>(10000);
     const [delay, setDelay] = useState<number>(50);
+
     const [items, setItems] = useState<DungeonItem[]>([]);
     const [selectedItem, setSelectedItem] = useState<DungeonItem | null>(null);
-    const startBot = async () => {
+
+    const validateForm = () => {
         if (!selectedItem) {
-            alert("Выберите предмет");
-            return;
-        }
-        if (urlItem.trim() === "") {
-            alert("Введите URL");
-            return;
-        }
-        if (vkToken.trim() === "") {
-            alert("Введите VK Token");
-            return;
+            notify.error("Выберите предмет");
+            return false;
         }
 
-        let parsedUrl;
+        if (urlItem.trim() === "") {
+            notify.error("Введите URL");
+            return false;
+        }
+
+        if (vkToken.trim() === "") {
+            notify.error("Введите VK Token");
+            return false;
+        }
+
+        return true;
+    };
+    const callBotAction = async (action: "start" | "stop") => {
+        if (!validateForm()) return;
+
         try {
-            parsedUrl = parseUrl(urlItem);
-            if (!parsedUrl?.authKey || !parsedUrl?.userId) {
-                throw new Error("Некорректный URL");
+            const service = action === "start" ? startBot : stopBot;
+            const result = await service(urlItem, {
+                delay,
+                name: selectedItem!.name,
+                itemId: selectedItem!.id,
+                vkToken,
+                maxPrice
+            });
+
+            if (result.ok) {
+                notify.success(`Бот успешно ${action === "start" ? "запущен 🚀" : "остановлен ⏹️"}`);
+            } else {
+                notify.error(result.error || `Не удалось ${action === "start" ? "запустить" : "остановить"} бота`);
             }
         } catch (err) {
-            alert("Введите правильный URL");
-            return;
-        }
-
-        try {
-            const payload = {
-                delay,
-                name: selectedItem.name,
-                item_id: selectedItem.id,
-                auth_key: parsedUrl.authKey,
-                user_id: parsedUrl.userId,
-                max_price: maxPrice,
-                vk_token: vkToken
-            };
-
-            console.log(payload);
-            await startMonitoring(payload);
-        } catch (err) {
-            console.error("Ошибка запуска бота:", err);
-            alert("Не удалось запустить бота");
+            notify.error(`Ошибка при ${action === "start" ? "запуске" : "остановке"} бота`);
+            console.error(err);
         }
     };
 
-    const stopBot = async () => {
-        const parsedUrl = parseUrl(urlItem);
-        await stopMonitoring({
-            delay: delay,
-            name: selectedItem?.name,
-            item_id: selectedItem?.id,
-            auth_key: parsedUrl?.authKey,
-            user_id: parsedUrl?.userId,
-            max_price: maxPrice,
-            vk_token: vkToken
-        })
-    }
     useEffect(() => {
-        const fetchItems = async () => {
-            const result = await window.electronAPI.readItemsFileJson();
-            if (!("success" in result)) {
-                setItems(result);
+        (async () => {
+            const result = await fetchItems()
+            if (result.data) {
+                setItems(result.data);
             } else {
                 console.log("Ошибка", result.error);
             }
-        };
-        fetchItems();
+        })()
     }, []);
     return (
         <div className={"w-full h-full flex flex-col items-center gap-10 justify-center"}>
             <div className={"w-full flex justify-center items-center"}>
-                <div className={"w-1/4 flex flex-col items-center gap-3"}>
-                    {items.length > 0 ? (
-                        <>
-                            <span className="w-2/6 text-base-input whitespace-nowrap">
-                                Выбери предмет
-                            </span>
-                            <div className="w-full h-1/4 grid grid-cols-3 gap-1">
-                                {items.map((item) => (
-                                    <div className={"w-full h-full"}
-                                         onClick={(event) => setSelectedItem({id: item.id, name: item.name})}>
-                                        <ItemCard key={item.id} id={item.id} name={item.name}/>
-                                    </div>
-                                ))}
-                            </div>
-                        </>
-                    ) : (
-                        <span className="bg-base-label p-3 rounded-full text-base-input whitespace-nowrap">
-                            Добавь предметы
-                        </span>
-                    )}
-                </div>
-                <div className={"w-1/2 flex flex-col items-center"}>
+                <ItemsList items={items} selectedItem={selectedItem} onSelect={setSelectedItem}/>
+                <div className={"w-1/2 h-full flex flex-col items-center"}>
                     <Input label={"Аунтификационый ключ"} value={vkToken} setValue={setVkToken}/>
                     <Input label={"URL предмета"} value={urlItem} setValue={setUrlItem}/>
                     <Input label={"Максимальная цена"} value={maxPrice} setValue={setMaxPrice}/>
@@ -113,8 +82,8 @@ const MainPage: FC = () => {
                 </div>
             </div>
             <div className={"w-3/4 flex items-center justify-center"}>
-                <Button type={ButtonType.submit} onClick={startBot}>Запустить бота</Button>
-                <Button type={ButtonType.delete} onClick={stopBot}>Остановить бота</Button>
+                <Button type={ButtonType.submit} onClick={() => callBotAction("start")}>Запустить бота</Button>
+                <Button type={ButtonType.delete} onClick={() => callBotAction("stop")}>Остановить бота</Button>
                 <PopupAddItem/>
                 <Button type={ButtonType.submit} onClick={() => null}>Запустить рыбалку</Button>
                 <Button type={ButtonType.delete} onClick={() => null}>Остановить рыбалку</Button>
@@ -124,30 +93,7 @@ const MainPage: FC = () => {
     )
 }
 
-function parseUrl(url: string): { userId: number; authKey: string } | null {
-    const requiredStart = "https://vip3.activeusers.ru/app.php?";
-
-    if (!url.startsWith(requiredStart)) {
-        console.error("Url should start with " + requiredStart);
-        return null;
-    }
-
-    const cleanedUrl = url.replace(
-        requiredStart + "act=item&",
-        ""
-    );
-
-    const parts = cleanedUrl.split("&");
-
-    const userId = Number(parts[2]?.split("=")[1]);
-    const authKey = parts[1]?.split("=")[1];
-
-    if (!userId || !authKey) {
-        console.error("URL missing required parameters");
-        return null;
-    }
-
-    return {userId, authKey};
-}
 
 export default MainPage;
+
+

@@ -3,7 +3,7 @@ import Button from "@/ui/Button";
 import {PopupAddItemForm} from "@/ui/PopupAddItem.props";
 import {ButtonType} from "@/ui/Button.props";
 import Input from "@//ui/Input";
-import {addItem} from "@/logics/items";
+import {addNewItem} from "@/services/itemsService";
 
 
 const PopupAddItem: FC<PopupAddItemForm> = () => {
@@ -11,7 +11,7 @@ const PopupAddItem: FC<PopupAddItemForm> = () => {
     const [nameItem, setNameItem] = useState<string>("");
     const [idItem, setIdItem] = useState<number>(0);
     const onClick = async () => {
-        await addItem(nameItem, Number(idItem))
+        await addNewItem({name: nameItem, id: Number(idItem)})
         setIsOpen(false);
     }
     return (
