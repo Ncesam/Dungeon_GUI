@@ -7,9 +7,7 @@ import {ButtonType} from "@/ui/Button.props";
 const ItemCard: FC<ItemCardForm> = ({name, id}) => {
     const idItem = id
     return (
-        <div className={"w-1/12"}>
-            <Button onClick={() => null} type={ButtonType.submit}>{name}</Button>
-        </div>
+        <Button onClick={() => null} type={ButtonType.submit}>{name}</Button>
     )
 }
 
